@@ -26,11 +26,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
-	// for parsing xml
-	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.16.1'
-	implementation 'com.fasterxml.jackson.core:jackson-core:2.21.1'
-	implementation 'com.fasterxml.jackson.core:jackson-annotations:2.16.1'
-	implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+//	// for parsing xml
+//	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.16.1'
+//	implementation 'com.fasterxml.jackson.core:jackson-core:2.21.1'
+//	implementation 'com.fasterxml.jackson.core:jackson-annotations:2.16.1'
+//	implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
 
 	// for reducing boiler plate
 	compileOnly 'org.projectlombok:lombok'

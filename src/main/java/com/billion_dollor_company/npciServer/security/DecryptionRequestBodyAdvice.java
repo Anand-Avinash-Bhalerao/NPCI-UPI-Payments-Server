@@ -6,7 +6,6 @@ import com.billion_dollor_company.npciServer.common.payload.EncryptedReqDTO;
 import com.billion_dollor_company.npciServer.cryptography.symmetric.AES;
 import com.billion_dollor_company.npciServer.cryptography.utils.DecryptionManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,8 +70,8 @@ public class DecryptionRequestBodyAdvice extends RequestBodyAdviceAdapter {
         // 2. Convert to EncryptedReqDTO
         EncryptedReqDTO encryptedReq;
         try {
-            XmlMapper xmlMapper = new XmlMapper();
-            encryptedReq = xmlMapper.readValue(rawBody, EncryptedReqDTO.class);
+            ObjectMapper objectMapper = new ObjectMapper();
+            encryptedReq = objectMapper.readValue(rawBody, EncryptedReqDTO.class);
         } catch (Exception e) {
             throw new HttpMessageNotReadableException("Invalid encrypted request format", e);
         }
