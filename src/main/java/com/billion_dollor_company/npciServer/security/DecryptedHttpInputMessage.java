@@ -29,9 +29,7 @@ public class DecryptedHttpInputMessage implements HttpInputMessage {
     public HttpHeaders getHeaders() {
         HttpHeaders newHeaders = new HttpHeaders();
         newHeaders.putAll(this.headers);
-
         newHeaders.setContentType(MediaType.APPLICATION_JSON);
-
         return newHeaders;
     }
 }

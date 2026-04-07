@@ -41,9 +41,7 @@ public class DecryptionRequestBodyAdvice extends RequestBodyAdviceAdapter {
      * Here we apply to ALL @RequestBody. You can restrict if needed.
      */
     @Override
-    public boolean supports(MethodParameter methodParameter,
-                            Type targetType,
-                            Class<? extends HttpMessageConverter<?>> converterType) {
+    public boolean supports(MethodParameter methodParameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         return true; // or restrict using annotation / package / DTO type
     }
 
@@ -51,19 +49,11 @@ public class DecryptionRequestBodyAdvice extends RequestBodyAdviceAdapter {
      * Intercepts BEFORE Spring converts JSON → DTO
      */
     @Override
-    public HttpInputMessage beforeBodyRead(HttpInputMessage inputMessage,
-                                           MethodParameter parameter,
-                                           Type targetType,
-                                           Class<? extends HttpMessageConverter<?>> converterType)
-            throws IOException {
+    public HttpInputMessage beforeBodyRead(HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) throws IOException {
 
-        // 1. Read raw body
-        String rawBody = new BufferedReader(
-                new InputStreamReader(inputMessage.getBody(), StandardCharsets.UTF_8))
-                .lines()
-                .collect(Collectors.joining());
+        String rawBody = new BufferedReader(new InputStreamReader(inputMessage.getBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining());
 
-        if (rawBody == null || rawBody.isBlank()) {
+        if (rawBody.isBlank()) {
             throw new HttpMessageNotReadableException("Empty request body", inputMessage);
         }
 
@@ -73,27 +63,22 @@ public class DecryptionRequestBodyAdvice extends RequestBodyAdviceAdapter {
             ObjectMapper objectMapper = new ObjectMapper();
             encryptedReq = objectMapper.readValue(rawBody, EncryptedReqDTO.class);
         } catch (Exception e) {
-            throw new HttpMessageNotReadableException("Invalid encrypted request format", e);
+            throw new HttpMessageNotReadableException("Invalid encrypted request format", inputMessage);
         }
 
         // 3. Validate (IMPORTANT since controller won’t see EncryptedReqDTO)
         Set<ConstraintViolation<EncryptedReqDTO>> violations = validator.validate(encryptedReq);
         if (!violations.isEmpty()) {
-            String errorMsg = violations.stream()
-                    .map(v -> v.getPropertyPath() + " " + v.getMessage())
-                    .collect(Collectors.joining(", "));
+            String errorMsg = violations.stream().map(v -> v.getPropertyPath() + " " + v.getMessage()).collect(Collectors.joining(", "));
             throw new HttpMessageNotReadableException("Validation failed: " + errorMsg, inputMessage);
         }
 
         // 4. Decrypt
         String decryptedJson;
         try {
-            decryptedJson = decrypt(
-                    encryptedReq.getEncryptedData(),
-                    encryptedReq.getEncryptedKey()
-            );
+            decryptedJson = decrypt(encryptedReq.getEncryptedData(), encryptedReq.getEncryptedKey());
         } catch (Exception e) {
-            throw new HttpMessageNotReadableException("Decryption failed",e, inputMessage);
+            throw new HttpMessageNotReadableException("Decryption failed", e, inputMessage);
         }
 
         // 5. Replace body with decrypted JSON
@@ -105,14 +90,12 @@ public class DecryptionRequestBodyAdvice extends RequestBodyAdviceAdapter {
      */
     private String decrypt(String encryptedData, String encryptedKey) {
 
+        // The aes key used to encrypt the data (encryptedData), was also encrypted using NPCI's public key.
+        // Decrypt encryptedKey to get the AES key to decrypt encryptedData
         DecryptionManager decryptionManager = new DecryptionManager(Constants.Keys.NPCI_PRIVATE_KEY, "");
+        String decryptedAesAppKey = decryptionManager.getDecryptedMessage(encryptedKey);
 
-        String decryptedKey = decryptionManager.getDecryptedMessage(encryptedKey);
-
-        String decrypted = AES.decrypt(encryptedData, decryptedKey);
-
-        System.out.println(decrypted);
-
-        return decrypted;
+        // Now, get the decrypted data using the key we just got.
+        return AES.decrypt(encryptedData, decryptedAesAppKey);
     }
 }
