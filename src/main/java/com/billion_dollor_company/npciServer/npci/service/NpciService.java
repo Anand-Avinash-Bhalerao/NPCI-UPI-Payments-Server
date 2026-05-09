@@ -1,19 +1,30 @@
 package com.billion_dollor_company.npciServer.npci.service;
 
+import com.billion_dollor_company.npciServer.bank.service.BankService;
+import com.billion_dollor_company.npciServer.cryptography.service.CryptographyService;
 import com.billion_dollor_company.npciServer.domain.models.BalanceInfo;
 import com.billion_dollor_company.npciServer.domain.models.BalanceInquiryInfo;
-import com.billion_dollor_company.npciServer.payloads.fetchKeys.FetchKeysResDTO;
-import com.billion_dollor_company.npciServer.payloads.registration.RegistrationReqDTO;
-import com.billion_dollor_company.npciServer.payloads.registration.RegistrationResDTO;
-import com.billion_dollor_company.npciServer.payloads.transaction.TransactionReqDTO;
-import com.billion_dollor_company.npciServer.payloads.transaction.TransactionResDTO;
+import org.springframework.stereotype.Service;
 
-public interface NpciService {
-    TransactionResDTO initiateTransaction(TransactionReqDTO requestInfo);
+@Service
+public class NpciService {
 
-    BalanceInfo getAccountBalance(BalanceInquiryInfo requestInfo);
+    private final BankService bankService;
 
-    RegistrationResDTO registration(RegistrationReqDTO requestInfo);
+    private final CryptographyService cryptographyService;
 
-    FetchKeysResDTO fetchKeys();
+    public NpciService(BankService bankService, CryptographyService cryptographyService) {
+        this.bankService = bankService;
+        this.cryptographyService = cryptographyService;
+    }
+
+    public BalanceInfo balanceInquiry(BalanceInquiryInfo inquiryInfo) {
+
+        String encryptedPassword = inquiryInfo.getCredentials().getEncryptedPassword();
+        String upiId = inquiryInfo.getCredentials().getUpiId();
+
+        inquiryInfo.getCredentials().setEncryptedPassword(cryptographyService.decryptAndReEncryptPW(encryptedPassword));
+
+        return bankService.initiateBalanceInquiry(inquiryInfo);
+    }
 }

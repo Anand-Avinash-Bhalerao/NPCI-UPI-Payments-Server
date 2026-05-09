@@ -49,6 +49,7 @@ public class DecryptionManager {
             byte[] decryptedMessage = cipher.doFinal(encryptedBytes);
             return new String(decryptedMessage, StandardCharsets.UTF_8);
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
